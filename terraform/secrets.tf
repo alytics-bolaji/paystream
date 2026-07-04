@@ -9,7 +9,7 @@ resource "aws_secretsmanager_secret" "paystream_config" {
 resource "aws_secretsmanager_secret_version" "paystream_config" {
   secret_id = aws_secretsmanager_secret.paystream_config.id
   secret_string = jsonencode({
-    NOTIFICATION_SERVICE_URL = "http://notification-service.paystream.svc.cluster.local:3001"
+    NOTIFICATION_SERVICE_URL = "http://notification-service.paystream.svc.cluster.local:3005"
     ENVIRONMENT              = "production"
     LOG_LEVEL                = "info"
   })

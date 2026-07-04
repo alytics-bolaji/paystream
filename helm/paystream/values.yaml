@@ -22,13 +22,13 @@ paymentService:
     requests: { cpu: "150m", memory: "256Mi" }
     limits: { cpu: "500m", memory: "512Mi" }
   env:
-    NOTIFICATION_SERVICE_URL: "http://notification-service:3001"
+    NOTIFICATION_SERVICE_URL: "http://notification-service:3005"
 
 # ── Notification Service ──────────────────────────────────────────────
 notificationService:
   image: paystream/notification-service
   replicas: 1
-  port: 3001
+  port: 3005
   resources:
     requests: { cpu: "100m", memory: "128Mi" }
     limits: { cpu: "200m", memory: "256Mi" }

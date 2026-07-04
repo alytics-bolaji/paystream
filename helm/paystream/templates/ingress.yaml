@@ -19,7 +19,7 @@ spec:
           - path: /api/v1/notifications
             pathType: Prefix
             backend:
-              service: { name: notification-service, port: { number: 3001 } }
+              service: { name: notification-service, port: { number: 3005 } }
           - path: /
             pathType: Prefix
             backend:

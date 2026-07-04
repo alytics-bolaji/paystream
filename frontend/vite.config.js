@@ -25,7 +25,7 @@ export default defineConfig({
         changeOrigin: true
       },
       '/api/v1/notifications': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:3005',
         changeOrigin: true
       }
     }
