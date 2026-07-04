@@ -17,7 +17,7 @@ spec:
         app: notification-service
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port:   "3001"
+        prometheus.io/port:   "3005"
         prometheus.io/path:   "/metrics"
     spec:
       containers:
@@ -25,7 +25,7 @@ spec:
           image: {{ .Values.global.registry }}/{{ .Values.notificationService.image }}:{{ .Values.global.imageTag }}
           imagePullPolicy: Always
           ports:
-            - containerPort: 3001
+            - containerPort: 3005
           resources:
             requests:
               cpu:    {{ .Values.notificationService.resources.requests.cpu    | quote }}
@@ -34,7 +34,7 @@ spec:
               cpu:    {{ .Values.notificationService.resources.limits.cpu    | quote }}
               memory: {{ .Values.notificationService.resources.limits.memory | quote }}
           livenessProbe:
-            httpGet: { path: /health, port: 3001 }
+            httpGet: { path: /health, port: 3005 }
             initialDelaySeconds: 10
             periodSeconds: 20
 
