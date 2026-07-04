@@ -1,0 +1,44 @@
+# ── Global ────────────────────────────────────────────────────────────
+global:
+  registry: "" # Override at install: --set global.registry=<account>.dkr.ecr.<region>.amazonaws.com
+  imageTag: "latest" # Override with CI git SHA: --set global.imageTag=<sha>
+  namespace: paystream
+
+# ── Frontend ──────────────────────────────────────────────────────────
+frontend:
+  image: paystream/frontend
+  replicas: 2
+  port: 80
+  resources:
+    requests: { cpu: "100m", memory: "128Mi" }
+    limits: { cpu: "200m", memory: "256Mi" }
+
+# ── Payment Service ───────────────────────────────────────────────────
+paymentService:
+  image: paystream/payment-service
+  replicas: 2
+  port: 8000
+  resources:
+    requests: { cpu: "150m", memory: "256Mi" }
+    limits: { cpu: "500m", memory: "512Mi" }
+  env:
+    NOTIFICATION_SERVICE_URL: "http://notification-service:3001"
+
+# ── Notification Service ──────────────────────────────────────────────
+notificationService:
+  image: paystream/notification-service
+  replicas: 1
+  port: 3001
+  resources:
+    requests: { cpu: "100m", memory: "128Mi" }
+    limits: { cpu: "200m", memory: "256Mi" }
+
+# ── Ingress ───────────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  className: "alb"
+  host: "" # Set at install: --set ingress.host=<your-domain>
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip

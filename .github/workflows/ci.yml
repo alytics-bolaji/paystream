@@ -1,0 +1,96 @@
+name: CI — Build, Scan & Push
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+
+jobs:
+  build-and-push:
+    name: Build, Scan & Push Images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ── Scan source code with Trivy before building ────────────────────
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: "1" # Fail the pipeline on CRITICAL or HIGH findings
+          format: table
+
+      # ── Build & push each service ──────────────────────────────────────
+      #   - name: Build and push payment-service
+      #     run: |
+      #       # BUG-04: Image is tagged only with 'latest'.
+      #       # When EKS nodes already have a 'latest' image cached, they will NOT
+      #       # pull the new one because the tag hasn't changed — pods keep running
+      #       # old code even after a successful deployment.
+      #       # Fix: also tag with github.sha and use that tag in the Helm values.
+      #       # See Solutions section.
+      #       docker build -t $ECR_REGISTRY/paystream/payment-service:latest ./payment-service
+      #       docker push     $ECR_REGISTRY/paystream/payment-service:latest
+
+      - name: Build and push payment-service
+        run: |
+          IMAGE_TAG="${{ github.sha }}"
+          docker build --platform linux/amd64 \
+            -t ${ECR_REGISTRY}/paystream/payment-service:latest \
+            -t ${ECR_REGISTRY}/paystream/payment-service:${IMAGE_TAG} \
+            ./payment-service
+          docker push ${ECR_REGISTRY}/paystream/payment-service:latest
+          docker push ${ECR_REGISTRY}/paystream/payment-service:${IMAGE_TAG}
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+
+      - name: Build and push notification-service
+        run: |
+          IMAGE_TAG="${{ github.sha }}"
+          docker build --platform linux/amd64 \
+            -t ${ECR_REGISTRY}/paystream/notification-service:latest \
+            -t ${ECR_REGISTRY}/paystream/notification-service:${IMAGE_TAG} \
+            ./notification-service
+          docker push ${ECR_REGISTRY}/paystream/notification-service:latest
+          docker push ${ECR_REGISTRY}/paystream/notification-service:${IMAGE_TAG}
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+
+      - name: Build and push frontend
+        run: |
+          IMAGE_TAG="${{ github.sha }}"
+          docker build --platform linux/amd64 \
+            -t ${ECR_REGISTRY}/paystream/frontend:latest \
+            -t ${ECR_REGISTRY}/paystream/frontend:${IMAGE_TAG} \
+            ./frontend
+          docker push ${ECR_REGISTRY}/paystream/frontend:latest
+          docker push ${ECR_REGISTRY}/paystream/frontend:${IMAGE_TAG}
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+
+      # ── Scan built images for vulnerabilities ─────────────────────────
+      - name: Scan payment-service image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: image
+          image-ref: ${{ env.ECR_REGISTRY }}/paystream/payment-service:latest
+          severity: CRITICAL
+          exit-code: "0" # Report but don't fail on image scan (policy decision)
+          format: table

@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: payment-service
+    {{- include "paystream.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      # BUG-02: targetPort is 8080 but the payment-service container listens on port 8000.
+      # The Service will accept connections on port 80 but forward them to the wrong
+      # container port — all API calls will time out with "connection refused".
+      # Fix: change targetPort to 8000 — see Solutions section.
+      targetPort: 8000

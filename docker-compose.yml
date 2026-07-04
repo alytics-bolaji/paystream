@@ -1,0 +1,33 @@
+version: '3.8'
+
+
+services:
+  payment-service:
+    build: ./payment-service
+    container_name: ps-payment
+    ports:
+      - "8000:8000"
+    environment:
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3001
+    depends_on:
+      - notification-service
+    restart: unless-stopped
+
+
+  notification-service:
+    build: ./notification-service
+    container_name: ps-notification
+    ports:
+      - "3005:3005"
+    restart: unless-stopped
+
+
+  frontend:
+    build: ./frontend
+    container_name: ps-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - payment-service
+      - notification-service
+    restart: unless-stopped

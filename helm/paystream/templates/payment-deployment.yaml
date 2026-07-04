@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: payment-service
+    {{- include "paystream.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.paymentService.replicas }}
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port:   "8000"
+        prometheus.io/path:   "/metrics"
+    spec:
+      containers:
+        - name: payment-service
+          image: {{ .Values.global.registry }}/{{ .Values.paymentService.image }}:{{ .Values.global.imageTag }}
+          # BUG-04: imagePullPolicy is not set to Always.
+          # When imageTag is 'latest', Kubernetes may use a cached image and never
+          # pull the newly-built one. New deployments appear to succeed but run old code.
+          # Fix: set imagePullPolicy: Always — see Solutions section.
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: NOTIFICATION_SERVICE_URL
+              value: {{ .Values.paymentService.env.NOTIFICATION_SERVICE_URL | quote }}
+          resources:
+            requests:
+              cpu:    {{ .Values.paymentService.resources.requests.cpu    | quote }}
+              memory: {{ .Values.paymentService.resources.requests.memory | quote }}
+            limits:
+              cpu:    {{ .Values.paymentService.resources.limits.cpu    | quote }}
+              memory: {{ .Values.paymentService.resources.limits.memory | quote }}
+          livenessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: { path: /health, port: 8000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+
+

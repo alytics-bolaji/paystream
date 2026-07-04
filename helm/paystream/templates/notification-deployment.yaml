@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: notification-service
+    {{- include "paystream.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.notificationService.replicas }}
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port:   "3001"
+        prometheus.io/path:   "/metrics"
+    spec:
+      containers:
+        - name: notification-service
+          image: {{ .Values.global.registry }}/{{ .Values.notificationService.image }}:{{ .Values.global.imageTag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+          resources:
+            requests:
+              cpu:    {{ .Values.notificationService.resources.requests.cpu    | quote }}
+              memory: {{ .Values.notificationService.resources.requests.memory | quote }}
+            limits:
+              cpu:    {{ .Values.notificationService.resources.limits.cpu    | quote }}
+              memory: {{ .Values.notificationService.resources.limits.memory | quote }}
+          livenessProbe:
+            httpGet: { path: /health, port: 3001 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+
