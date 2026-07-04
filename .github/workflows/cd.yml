@@ -45,7 +45,7 @@ jobs:
             --namespace paystream \
             --create-namespace \
             --set global.registry=$ECR_REGISTRY \
-            --set global.imageTag=latest \
+            --set global.imageTag=${{ github.event.workflow_run.head_sha }} \
             --wait \
             --timeout 5m
 
