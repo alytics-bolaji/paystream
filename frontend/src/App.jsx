@@ -303,7 +303,7 @@ export default function App() {
           <div className="lg:col-span-2 bg-gray-900/60 border border-gray-800 rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
               <div>
-                <h2 className="font-semibold text-white">Recent Transactions</h2>
+                <h2 className="font-semibold text-white">Recent Transaction</h2>
                 <p className="text-xs text-gray-500 mt-0.5">{payments.length} total</p>
               </div>
               <button onClick={() => setShowModal(true)}
